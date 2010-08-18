@@ -7,8 +7,10 @@ This project recreates an Accio-like framework in python. The goal is to automat
 ===== Mainfest =====
 
 * faux_accio.py
+* fa_grabber.py
 * convert.py
 * content_tree.xml.bz2
+
 
 ===== Setup =====
 
@@ -20,7 +22,7 @@ This project recreates an Accio-like framework in python. The goal is to automat
 
 1b. Just unpack content_tree.xml.bz2.  It may be out of date, but will spare you the download and conversion.
 
-===== Usage =====
+===== Command Line Usage =====
 faux-accio.py [n] [topic_A] [topic_B] [path] [suffix]
 
 The script runs in one of two modes, depending on how many arguments you pass.
@@ -41,6 +43,8 @@ If [topic_B] is given, then faux_accio acquires all of the sublinks under [topic
 
 [path] defaults to the current directory.  If [path] or [path]/raw[suffix] does not exist, it is created. [suffix] defaults to ''.
 
+===== Library Usage =====
+faux_accio can also be used as a library.  See fa_grabber.py for an example.
 
 ===== Notes =====
 * According to the authors' notes, the original Accio randomly selected nodes in the ODP tree for download.  I'm not that nice -- you have to choose your own nodes.  You can use the 

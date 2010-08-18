@@ -131,16 +131,11 @@ def get_all_child_links( node, exclude=[] ):
 ########################################################################
 
 
-def main( n, topic_A, topic_B, _path, _suffix ):
+def main( n=50000, topic_A=None, topic_B=None, _path='./', _suffix='' ):
     global path
     global suffix
     path = _path
     suffix = _suffix
-
-    #load rdf file
-    print 'Loading rdf file...'
-    tree = etree.parse(file(source_file, 'r'))
-    root = tree.getroot()
 
     if topic_B == None:   #Display mode
         print 'subtpcs\tlinks\tsublnks\tTopic'
@@ -205,13 +200,18 @@ def main( n, topic_A, topic_B, _path, _suffix ):
         download_results = download_results.get()
 
         print 'Saving results to csv...'
-        csv_file = file(path+'fa_download'+suffix+'.csv', 'wb')
+        csv_file = file(path+'download_info'+suffix+'.csv', 'wb')
         csv_writer = csv.writer( csv_file )
         csv_writer.writerow( [ 'classname', 'classval', 'classid', 'url', 'filename', 'start_time', 'download_time', 'end_time', 'downloadSucceeded', 'length' ] )
         for d in download_results:
             csv_writer.writerow( d )
         csv_file.close()
 
+
+#load rdf file
+print 'Loading rdf file...'
+tree = etree.parse(file(source_file, 'r'))
+root = tree.getroot()
 
 
 if __name__ == "__main__":
@@ -225,5 +225,6 @@ if __name__ == "__main__":
     except: path='./'
     try: suffix=sys.argv[5]
     except: suffix=''
+
     main( n, topic_A, topic_B, path, suffix )
 
