@@ -21,14 +21,14 @@ This project recreates an Accio-like framework in python. The goal is to automat
 1b. Just unpack content_tree.xml.bz2.  It may be out of date, but will spare you the download and conversion.
 
 ===== Usage =====
-faux-accio.py [n] [node1] [node2] [path] [suffix]
+faux-accio.py [n] [topic_A] [topic_B] [path] [suffix]
 
 The script runs in one of two modes, depending on how many arguments you pass.
 
 Display Mode:
-For zero, one, or two arguments, faux_accio traverses the tree under [node1] and displays nodes with at least [n] total sublinks.  That is, the node and its children must have at least [n] nodes together in order to be shown.  This is an easy way to explore the ODP topictree.
+For zero, one, or two arguments, faux_accio traverses the tree under [topic_A] and displays nodes with at least [n] total sublinks.  That is, the node and its children must have at least [n] nodes together in order to be shown.  This is an easy way to explore the ODP topictree.
 
-If [node1] is not given, the search starts at the tree's root.  If [n] is not given it defaults to 50,000.  [n] must be given in order to specify [node1].
+If [topic_A] is not given, the search starts at the tree's root.  If [n] is not given it defaults to 50,000.  [n] must be given in order to specify [topic_A].
 
 Ex:
 	faux_accio.py
@@ -37,7 +37,7 @@ Ex:
 
 
 Download Mode:
-If [node2] is given, then faux_accio acquires all of the sublinks under [node1] and [node2] and randomly samples up to [n] from each.  Files are stored to the directory [path]/raw[suffix].  A download manifest is stored to directory [path]/fa_download[suffix].
+If [topic_B] is given, then faux_accio acquires all of the sublinks under [topic_A] and [topic_B] and randomly samples up to [n] from each.  Files are stored to the directory [path]/raw[suffix].  A download manifest is stored to directory [path]/fa_download[suffix].
 
 [path] defaults to the current directory.  If [path] or [path]/raw[suffix] does not exist, it is created. [suffix] defaults to ''.
 

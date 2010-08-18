@@ -1,18 +1,20 @@
-import random, re, datetime, pickle, time, csv, urllib2
+import random, re, datetime, pickle, time, csv, urllib2, sys, os
 import multiprocessing as mp
 try:
     from lxml import etree
 except:
+    print 'WARNING: lxml not found.  Attempting to from elementtree.  This may be *really* slow.'
     import elementtree.ElementTree as etree
     
 ########################################################################
 
+source_file ='trunc_tree.xml'
 pool_size = 100
-time_inc = 5
-time_limit = 20
-path = '/scratch/scratch1/agong/faux_accio/task1/'
-class_1 = 'Top/Health'
-class_2 = 'Top/Business'
+time_inc = 1
+time_limit = 5
+#path = './temp'#'/scratch/scratch1/agong/faux_accio/task1/'
+#class_1 = 'Top/Health'
+#class_2 = 'Top/Business'
 
 
 ########################################################################
@@ -58,7 +60,7 @@ def process_page( (classname, classval, classid, url) ):
 #This is the workhorse function for this script.
 #It downloads a page and saves it, then returns a list with information
     start_time = time.time()
-    filename = path+'c'+str(classval)+'d'+str(classid)+'.html'
+    filename = path+'raw'+suffix+'/c'+str(classval)+'d'+str(classid)+'.html'
 
     #Attempt to download the site
     try:
@@ -117,11 +119,13 @@ def find_topic( topic, root ):
     print 'WARNING: Topic node', topic, 'not found!'
     return None
 
-def get_all_child_links( node ):
+def get_all_child_links( node, exclude=[] ):
 #Get a list of all links under a Topic node and all of its children
+#The exclude list allows you to exclude subtopics
     links = []
     for n in node:
-        if n.tag == 'Topic': links = links + get_all_child_links( n )
+        if n.tag == 'Topic' and (not n in exclude):
+            links = links + get_all_child_links( n )
         if n.tag == 'link': links.append( n.attrib['resource'] )
         if n.tag == 'link1': links.append( n.attrib['resource'] )
 
@@ -131,51 +135,67 @@ def get_all_child_links( node ):
 ########################################################################
 
 
-def main():
+def main( n, topic_A, topic_B, _path, _suffix ):
+    global path
+    global suffix
+    path = _path
+    suffix = _suffix
+
     #load rdf file
     print 'Loading rdf file...'
-    tree = etree.parse(file('content_tree.xml', 'r'))
+    tree = etree.parse(file(source_file, 'r'))
     root = tree.getroot()
 
-    if 1:   #Display mode
-        pass
+    if topic_B == None:   #Display mode
+        print 'subtpcs\tlinks\tsublnks\tTopic'
+        if topic_A==None:
+            recursive_printer( root, n )
+        else:
+            node_A = find_topic( topic_A, root )
+            recursive_printer( node_A, n )
+
     else:   #Download mode
-        print 'FInding nodes in tree...'
-        n1 = find_topic( class_1, root )
-        n2 = find_topic( class_2, root )
+        print 'Finding nodes in tree...'
+        print '\tTopic A:', topic_A
+        node_A = find_topic( topic_A, root )
+        print '\tTopic B:', topic_B
+        node_B = find_topic( topic_B, root )
 
         #Identify all pages under those nodes
         print 'Identifying pages to crawl...'
-        l1 = get_all_child_links( n1 )
-        l2 = get_all_child_links( n2 )
+        list_A = get_all_child_links( node_A, exclude=[node_B] )
+        list_B = get_all_child_links( node_B, exclude=[node_A] )
+        print '\tTopic A had', len(list_A), 'sublinks'
+        print '\tTopic B had', len(list_B), 'sublinks'
 
         #sample pages
-        print 'Sampling pages...'
-        random.shuffle( l1 )
-        random.shuffle( l2 )
+        print 'Sampling', n, 'pages from each list...'
+        random.shuffle( list_A )
+        random.shuffle( list_B )
 
-        l1 = l1[:2000]
-        l2 = l2[:2000]
+        list_A = list_A[:n]
+        list_B = list_B[:n]
 
-        print l1[:50]
-        print len(l1)
-        print len(l2)
+#        pickle.dump( (l1, l2), file('lists.pkl', 'w') )
+#        (l1, l2) = pickle.load( file('lists.pkl', 'r') )
 
-        pickle.dump( (l1, l2), file('lists.pkl', 'w') )
-
-        (l1, l2) = pickle.load( file('lists.pkl', 'r') )
+        print 'Setting up directories...'
+        try: os.mkdir( path )
+        except: pass
+        try: os.mkdir( path+'raw'+suffix+'/' )
+        except: pass
 
         #crawl
         print 'Downloading pages...'
 
         start_time = datetime.datetime.now()
         my_pool = mp.Pool(pool_size)		#Use pool size to gracefully handle latency
-        download_results = my_pool.map_async( process_page, [(class_1,1,a,l1[a]) for a in range(len(l1))] + [(class_2,2,a,l2[a]) for a in range(len(l2))], chunksize=1 )
-        n = len(l1)+len(l2)
+        download_results = my_pool.map_async( process_page, [(topic_A,1,a,list_A[a]) for a in range(len(list_A))] + [(topic_B,2,a,list_B[a]) for a in range(len(list_B))], chunksize=1 )
+        k = len(list_A)+len(list_B)
         while not download_results.ready():
             download_results.wait(time_inc)
 
-            percent_complete = 1 - (float(download_results._number_left)/n)
+            percent_complete = 1 - (float(download_results._number_left)/k)
             if percent_complete > 0:
                 completion_duration = (datetime.datetime.now() - start_time)*10000/int(10000*percent_complete)
                 remaining_time = completion_duration*int(10000*(1-percent_complete))/10000
@@ -188,7 +208,7 @@ def main():
         download_results = download_results.get()
 
         print 'Saving results to csv...'
-        csv_file = file(path+'master_list.csv', 'wb')
+        csv_file = file(path+'fa_download'+suffix+'.csv', 'wb')
         csv_writer = csv.writer( csv_file )
         csv_writer.writerow( [ 'classname', 'classval', 'classid', 'url', 'filename', 'start_time', 'download_time', 'end_time', 'downloadSucceeded', 'length' ] )
         for d in download_results:
@@ -198,5 +218,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try: n=int(sys.argv[1])
+    except: n=50000
+    try: topic_A=sys.argv[2]
+    except: topic_A=None
+    try: topic_B=sys.argv[3]
+    except: topic_B=None
+    try: path=sys.argv[4]
+    except: path='./'
+    try: suffix=sys.argv[5]
+    except: suffix=''
+    main( n, topic_A, topic_B, path, suffix )
 
