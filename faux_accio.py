@@ -8,14 +8,10 @@ except:
     
 ########################################################################
 
-source_file ='trunc_tree.xml'
+source_file ='content_tree.xml'
 pool_size = 100
 time_inc = 1
 time_limit = 5
-#path = './temp'#'/scratch/scratch1/agong/faux_accio/task1/'
-#class_1 = 'Top/Health'
-#class_2 = 'Top/Business'
-
 
 ########################################################################
 
@@ -187,10 +183,11 @@ def main( n, topic_A, topic_B, _path, _suffix ):
 
         #crawl
         print 'Downloading pages...'
-
         start_time = datetime.datetime.now()
+
         my_pool = mp.Pool(pool_size)		#Use pool size to gracefully handle latency
         download_results = my_pool.map_async( process_page, [(topic_A,1,a,list_A[a]) for a in range(len(list_A))] + [(topic_B,2,a,list_B[a]) for a in range(len(list_B))], chunksize=1 )
+
         k = len(list_A)+len(list_B)
         while not download_results.ready():
             download_results.wait(time_inc)
