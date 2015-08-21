@@ -1,0 +1,3 @@
+Labeling data for text classification can be a huge pain. In 2004, Davidov et al documented a method for creating "labeled" data sets using the Open Directory Project.  They created a software package called Accio to automate this process.  Unfortunately, I can find no record of them making the software public.
+
+This project recreates an Accio-like framework in python.  The goal is to automate the acquisition of "labeled" data for text classifiers.
